@@ -37,7 +37,10 @@ for item in result['hits']['hits']:
         dash_panels[item['_source']['dashboard_title']] = []
         dash_panels[item['_source']['dashboard_title']].append(item['_source']['panel_title'])
     else:
-        dash_panels[item['_source']['dashboard_title']].append(item['_source']['panel_title'])
+        if dash_panels[item['_source']['dashboard_title']].__contains__(item['_source']['panel_title']):
+            continue
+        else:
+            dash_panels[item['_source']['dashboard_title']].append(item['_source']['panel_title'])
 
 print (dash_panels)
 
