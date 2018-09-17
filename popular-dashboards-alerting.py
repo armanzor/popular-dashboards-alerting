@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 from elasticsearch import Elasticsearch
 from datetime import date
-import json
+import smtplib
+from email.message import EmailMessage
 
 es = Elasticsearch ()
 today = date.today().strftime("%Y.%m.%d")
@@ -57,4 +58,17 @@ for line in open('dashboards.list'):
     if line in dash_panels.keys():
         dashboard_alert.append(line)
 
-print (dashboard_alert)
+# print (dashboard_alert)
+
+if len(dashboard_alert) > 0:
+    msg = EmailMessage()
+    msg['From'] = 'test@example.com'
+    msg['To'] = 'test@example.com'
+    msg['Subject'] = 'Grafana dashboard no data alert'
+    msg.set_content('\n'.join(dashboard_alert))
+
+    s = smtplib.SMTP('smtp.example.com')
+    s.starttls()
+    s.login('username', 'password')
+    s.send_message(msg)
+    s.quit()
