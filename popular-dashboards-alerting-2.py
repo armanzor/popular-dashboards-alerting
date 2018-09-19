@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# dash_panels contains dashboards with list of panels, it can be used in future
 from elasticsearch import Elasticsearch
 from datetime import date
 from smtplib import SMTP
@@ -10,6 +11,7 @@ error_message = 'NO DATA'
 dash_panels = {}
 dashboard_alert = []
 msg_body = ''
+max_len_dash = 0    # for rows align
 
 def dashPanelsAppend (result):
     for item in result['hits']['hits']:
@@ -22,7 +24,6 @@ def dashPanelsAppend (result):
                 continue
             else:
                 dash_panels[item['_source']['dashboard_title']].append(item['_source']['panel_title'])
-
 
 result = es.search(index = 'grafana-check-{date}'.format(date = today), #returns dict
     scroll = '1m',
@@ -54,26 +55,24 @@ while len(result['hits']['hits']) != 0:
 
 es.clear_scroll(scroll_id = scroll_id)
 
-for line in open('dashboards.list'):
-    if line[-1] == '\n':
-        line = line[:-1]
-    if line in dash_panels.keys():
-        dashboard_alert.append({line : dash_panels[line][0]['dashboard_url']})
-
-# print (dash_panels)
-# print (dashboard_alert)
+for dashboard_title in open('dashboards.list'):
+    if dashboard_title[-1] == '\n':
+        dashboard_title = dashboard_title[:-1]
+    if dashboard_title in dash_panels.keys():
+        dashboard_alert.append((dashboard_title, dash_panels[dashboard_title][0]['dashboard_url']))
+        if len(dashboard_title) > max_len_dash:
+            max_len_dash = len(dashboard_title)
 
 for item in dashboard_alert:
-    msg_body = msg_body + item.keys()[0] + '\t' + item.values()[0] + '\n'
+    space_multiply = max_len_dash - len(item[0]) + 8
+    msg_body = msg_body + item[0] + ' ' * space_multiply + item[1] + '\n'
 
-print (msg_body)
+if len(dashboard_alert) > 0:
+    msg = MIMEText(msg_body)
+    msg['From'] = 'test@example.com'
+    msg['To'] = 'test@example.com'
+    msg['Subject'] = 'Grafana dashboard no data alert'
 
-# if len(dashboard_alert) > 0:
-#     msg = MIMEText(msg_body)
-#     msg['From'] = 'test@example.com'
-#     msg['To'] = 'test@example.com'
-#     msg['Subject'] = 'Grafana dashboard no data alert'
-
-#     s = SMTP('localhost')
-#     s.sendmail(msg['From'], msg['To'], msg.as_string())
-#     s.quit()
+    s = SMTP('localhost')
+    s.sendmail(msg['From'], msg['To'], msg.as_string())
+    s.quit()
