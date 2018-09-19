@@ -9,11 +9,13 @@ today = date.today().strftime("%Y.%m.%d")
 error_message = 'NO DATA'
 dash_panels = {}
 dashboard_alert = []
+msg_body = ''
 
 def dashPanelsAppend (result):
     for item in result['hits']['hits']:
         if dash_panels.get(item['_source']['dashboard_title']) is None:
             dash_panels[item['_source']['dashboard_title']] = []
+            dash_panels[item['_source']['dashboard_title']].append({'dashboard_url' : item['_source']['dashboard_url'].split('?')[0]})
             dash_panels[item['_source']['dashboard_title']].append(item['_source']['panel_title'])
         else:
             if dash_panels[item['_source']['dashboard_title']].__contains__(item['_source']['panel_title']):
@@ -56,12 +58,18 @@ for line in open('dashboards.list'):
     if line[-1] == '\n':
         line = line[:-1]
     if line in dash_panels.keys():
-        dashboard_alert.append(line)
+        dashboard_alert.append({line : dash_panels[line][0]['dashboard_url']})
 
-print (dashboard_alert)
+# print (dash_panels)
+# print (dashboard_alert)
+
+for item in dashboard_alert:
+    msg_body = msg_body + item.keys()[0] + '\t' + item.values()[0] + '\n'
+
+print (msg_body)
 
 # if len(dashboard_alert) > 0:
-#     msg = MIMEText('\n'.join(dashboard_alert))
+#     msg = MIMEText(msg_body)
 #     msg['From'] = 'test@example.com'
 #     msg['To'] = 'test@example.com'
 #     msg['Subject'] = 'Grafana dashboard no data alert'
